@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { path } from "../../routes/paths";
-import { useClerk, UserButton, useUser } from '@clerk/clerk-react';
+import { useClerk, UserButton, useUser } from '../../clerk';
 import { Icon } from '@iconify/react';
 
 const Navbar = () => {

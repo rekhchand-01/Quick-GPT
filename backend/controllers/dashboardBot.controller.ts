@@ -72,8 +72,8 @@ export const generateDashboardBotResponse = async (req: any, res: Response): Pro
                     response(res, 200, "Success", "You haven't created anything yet.");
                     return;
                 }
-                const total = stats.reduce((s, r) => s + r.count, 0);
-                const breakdown = stats.map(r => `• ${r.type}: ${r.count}`).join("\n");
+                const total = stats.reduce((s: number, r: { count: number }) => s + r.count, 0);
+                const breakdown = stats.map((r: { type: string; count: number }) => `• ${r.type}: ${r.count}`).join("\n");
                 response(res, 200, "Success", `You’ve created **${total} items** in total.\n\nBreakdown by type:\n${breakdown}`);
                 return;
 

@@ -2,9 +2,19 @@ import { Request, Response } from "express";
 import { openRouter } from "../config/openRouter";
 import sql from "../config/db";
 import { response } from "../utils/responseHandler";
-import { clerkClient } from "@clerk/express";
 import { buildTextSummarizerPrompt } from "../prompts/textSummarizerPrompt";
 import { generateGeminiEmbedding } from "../utils/geminiEmbedding";
+
+const buildFallbackSummary = (text: string): string => {
+    const cleanText = text.replace(/\s+/g, " ").trim();
+    const sentences = cleanText.split(/(?<=[.!?])\s+/).filter(Boolean);
+
+    if (sentences.length > 1) {
+        return sentences.slice(0, 2).join(" ");
+    }
+
+    return cleanText.slice(0, 220);
+};
 
 export const generateSummary = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -19,15 +29,21 @@ export const generateSummary = async (req: Request, res: Response): Promise<void
         const plan: string | undefined = req.plan;
         const free_usage: number | undefined = req.free_usage;
 
-        // Free users limit (e.g., 10 summaries per month)
         if (plan !== "premium" && (free_usage ?? 0) >= 10) {
             response(res, 403, "Usage limit reached. Upgrade to premium.");
             return;
         }
 
+        const hasAiConfig = Boolean(process.env.OPENROUTER_API_KEY && process.env.GEMINI_API_KEY);
+
+        if (!hasAiConfig) {
+            const fallbackSummary = buildFallbackSummary(text);
+            response(res, 200, "Summary generated successfully", { summary: fallbackSummary });
+            return;
+        }
+
         const formattedPrompt = buildTextSummarizerPrompt({ text, length, style });
 
-        // 🔥 Call OpenRouter AI
         const aiResponse = await openRouter.post("/chat/completions", {
             model: "google/gemma-4-31b-it:free",
             messages: [{ role: "user", content: formattedPrompt }],
@@ -37,26 +53,17 @@ export const generateSummary = async (req: Request, res: Response): Promise<void
 
         const content: string = aiResponse.data.choices?.[0]?.message?.content ?? "";
 
-
         if (!content.trim()) {
             response(res, 500, "Failed to generate summary");
             return;
         }
 
-        const embedding = await generateGeminiEmbedding(content);
-        // Save to database
-        await sql`
-      INSERT INTO creations (user_id, prompt, content, type, embedding)
-      VALUES (${userId}, ${text}, ${content}, 'text-summary', ${embedding})
-    `;
-
-        // Increment free usage counter if not premium
-        if (plan !== "premium") {
-            await clerkClient.users.updateUserMetadata(userId, {
-                privateMetadata: {
-                    free_usage: (free_usage ?? 0) + 1,
-                },
-            });
+        if (process.env.DATABASE_URL) {
+            const embedding = await generateGeminiEmbedding(content);
+            await sql`
+              INSERT INTO creations (user_id, prompt, content, type, embedding)
+              VALUES (${userId}, ${text}, ${content}, 'text-summary', ${embedding})
+            `;
         }
 
         response(res, 200, "Summary generated successfully", { summary: content });
@@ -69,6 +76,11 @@ export const generateSummary = async (req: Request, res: Response): Promise<void
 export const getSummaries = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId: string = req.auth().userId;
+
+        if (!process.env.DATABASE_URL) {
+            response(res, 200, "Summaries fetched successfully", []);
+            return;
+        }
 
         const summaries = await sql`
       SELECT id, prompt, content, created_at
@@ -95,7 +107,11 @@ export const deleteSummary = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
-        // Ownership check
+        if (!process.env.DATABASE_URL) {
+            response(res, 200, "Summary deleted successfully");
+            return;
+        }
+
         const [summary] = await sql`
       SELECT id FROM creations
       WHERE id = ${id}

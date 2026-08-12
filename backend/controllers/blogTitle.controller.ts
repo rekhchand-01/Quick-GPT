@@ -51,11 +51,6 @@ export const generateBlogTitle = async (req: Request, res: Response): Promise<vo
         generateEmbeddingInBackground(creationId, content);
 
         // Update free usage
-        if (plan !== "premium") {
-            await clerkClient.users.updateUserMetadata(userId, {
-                privateMetadata: { free_usage: (free_usage ?? 0) + 1 },
-            });
-        }
 
     } catch (error: any) {
         console.error(error.response?.data || error.message);

@@ -98,11 +98,6 @@ export const generateSocialPost = async (
 
         // Update free usage
         if (plan !== "premium") {
-            await clerkClient.users.updateUserMetadata(userId, {
-                privateMetadata: {
-                    free_usage: (free_usage ?? 0) + 1,
-                },
-            });
         }
 
         response(res, 200, "Success", content);

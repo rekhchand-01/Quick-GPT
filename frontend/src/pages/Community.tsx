@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "../clerk";
 import { Loader2 } from "lucide-react";
 import { usePublishedImages, useToggleLike, setCurrentUserIdForLike } from "../hooks/useCommunity";
 import { CommunityCard } from "../components/community/CommunityCard";

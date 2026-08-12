@@ -1,4 +1,4 @@
-import { PricingTable } from "@clerk/clerk-react";
+import { PricingTable } from "../../clerk";
 import { Zap, ShieldCheck, Sparkles, CheckCircle } from "lucide-react";
 
 const Plans = () => {

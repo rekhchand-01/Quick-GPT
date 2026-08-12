@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { sidebarLinks } from '../../const/sidebarLinks';
-import { useUser, UserButton, useClerk } from '@clerk/clerk-react';
+import { useUser, UserButton } from '../../clerk';
 import { path } from '../../routes/paths';
 import type { SidebarLink, SidebarProps } from '../../types';
 import { Icon } from '@iconify/react';
@@ -9,15 +9,8 @@ import { X } from 'lucide-react';
 const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }) => {
     const navigate = useNavigate();
     const { user } = useUser();
-    const { openSignIn } = useClerk();
 
     const handleNavigation = (path: string) => {
-        if (!user) {
-            openSignIn();
-            onClose();
-            return;
-        }
-
         navigate(path);
         onClose();
     };

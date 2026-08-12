@@ -1,21 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { useUser, useClerk } from "@clerk/clerk-react";
 import { AiToolsData } from "../../assets/assets";
 import { ArrowUpRight } from "lucide-react";
 
 export const AITools = () => {
     const navigate = useNavigate();
-    const { user } = useUser();
-    const { openSignIn } = useClerk();
 
     const handleSubmit = (path: string, isUpcoming?: boolean) => {
         if (isUpcoming) return;
-
-        if (user) {
-            navigate(path);
-        } else {
-            openSignIn();
-        }
+        navigate(path);
     };
 
     return (

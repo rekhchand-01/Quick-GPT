@@ -3,7 +3,6 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
-import { clerkMiddleware, requireAuth } from "@clerk/express";
 
 import articleRouter from "./routes/article.route";
 import blogTitleRouter from "./routes/blog-title.route";
@@ -39,7 +38,6 @@ app.use(
 );
 
 app.use(express.json());
-app.use(clerkMiddleware());
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
@@ -52,9 +50,6 @@ app.get("/", (_req, res) => {
 });
 
 app.use('/api/chat', chatRouter)
-// 🔐 PROTECT ONLY API ROUTES
-app.use("/api", requireAuth());
-
 // Routes
 app.use("/api/article", articleRouter);
 app.use("/api/blog-title", blogTitleRouter);

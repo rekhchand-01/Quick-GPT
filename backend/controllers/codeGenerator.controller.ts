@@ -39,13 +39,6 @@ export const generateCode = async (req: Request, res: Response): Promise<void> =
     `;
 
         // Increment free usage counter if not premium
-        if (plan !== 'premium') {
-            await clerkClient.users.updateUserMetadata(userId, {
-                privateMetadata: {
-                    free_usage: (free_usage ?? 0) + 1,
-                },
-            });
-        }
 
         response(res, 200, 'Code generated successfully', content);
     } catch (error: any) {

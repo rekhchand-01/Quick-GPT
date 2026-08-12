@@ -3,16 +3,19 @@ import Home from "./pages/Home";
 import Layout from "./layout/Layout";
 import { routesConfig } from "./routes/RoutesConfig";
 import { path } from "./routes/paths";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "./clerk";
 import { useEffect } from "react";
 import { setAuthTokenGetter } from "./api/axiosInstance";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
-  const { getToken } = useAuth();
+  const auth = useAuth();
+  const getToken = auth?.getToken;
 
   useEffect(() => {
-    setAuthTokenGetter(getToken);
+    if (typeof getToken === 'function') {
+      setAuthTokenGetter(getToken);
+    }
   }, [getToken]);
 
   return (

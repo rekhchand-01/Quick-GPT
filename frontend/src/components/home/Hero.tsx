@@ -1,19 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { path } from '../../routes/paths';
-import { useUser, useClerk } from '@clerk/clerk-react';
 import { ArrowRight, Sparkles, PlayCircle } from 'lucide-react';
 
 export const Hero = () => {
     const navigate = useNavigate();
-    const { user } = useUser();
-    const { openSignIn } = useClerk();
 
     const handleStartCreating = () => {
-        if (user) {
-            navigate(path.DASHBOARD);
-        } else {
-            openSignIn();
-        }
+        navigate(path.DASHBOARD);
     };
 
     return (
@@ -32,7 +25,7 @@ export const Hero = () => {
                     <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
 
 
-                    <span onClick={!user ? handleStartCreating : () => navigate(path.CODE_GENERATOR)} className="text-xs font-semibold text-slate-600 tracking-wide">
+                    <span onClick={() => navigate(path.CODE_GENERATOR)} className="text-xs font-semibold text-slate-600 tracking-wide">
                         New: AI Code Generation is here
                     </span>
                     <ArrowRight size={14} className="text-indigo-400 group-hover:translate-x-1 transition-transform" />

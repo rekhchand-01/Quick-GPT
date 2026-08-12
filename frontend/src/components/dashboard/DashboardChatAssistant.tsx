@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Bot, X, Trash2, LayoutDashboard, ChevronRight, Sparkles } from "lucide-react";
 import { AIResponseParser } from "ai-response-parser";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "../../clerk";
 import { useDashboardBot } from "../../hooks/useDashboardBot";
 import { DashboardBotForm } from "./DashboardBotForm";
 

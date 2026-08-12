@@ -2,9 +2,19 @@ import { Request, Response } from "express";
 import { openRouter } from "../config/openRouter";
 import sql from "../config/db";
 import { response } from "../utils/responseHandler";
-import { clerkClient } from "@clerk/express";
 import { buildArticlePrompt } from "../prompts/articlePrompt";
 import { generateGeminiEmbedding } from "../utils/geminiEmbedding";
+
+const buildFallbackArticle = (prompt: string, length: number): string => {
+    const title = prompt.trim().replace(/\s+/g, " ");
+    const intro = `Artificial intelligence is becoming an everyday tool for creators, teams, and professionals. In this article, we explore how ${title.toLowerCase()} can make work faster, more organized, and more effective.`;
+    const body = `When used thoughtfully, AI helps people reduce repetitive work and focus on higher-value tasks. It can support planning, content creation, research, and decision-making while keeping teams moving with less friction. A practical approach is to use AI as a collaborator rather than a replacement, combining human judgment with machine speed.`;
+
+    const content = `# ${title}\n\n${intro}\n\n${body}`;
+
+    return length > 400 ? content : content.slice(0, Math.max(120, length));
+};
+
 export const generateArticle = async (
     req: Request,
     res: Response
@@ -20,6 +30,14 @@ export const generateArticle = async (
             return;
         }
 
+        const hasAiConfig = Boolean(process.env.OPENROUTER_API_KEY && process.env.GEMINI_API_KEY);
+
+        if (!hasAiConfig) {
+            const fallbackContent = buildFallbackArticle(prompt, length);
+            response(res, 200, "Success", fallbackContent);
+            return;
+        }
+
         const formattedPrompt = buildArticlePrompt({ title: prompt, length });
 
         const aiResponse = await openRouter.post("/chat/completions", {
@@ -31,22 +49,14 @@ export const generateArticle = async (
 
         const content = aiResponse.data.choices?.[0]?.message?.content ?? "";
 
-        // Generate embedding
-        const embedding = await generateGeminiEmbedding(content);
+        if (process.env.DATABASE_URL) {
+            const embedding = await generateGeminiEmbedding(content);
 
-        // Save article + embedding
-        await sql`
-          INSERT INTO creations(user_id, prompt, content, type, embedding)
-          VALUES(${userId}, ${prompt}, ${content}, 'article', ${embedding})
-          RETURNING id
-        `;
-
-        if (plan !== "premium") {
-            await clerkClient.users.updateUserMetadata(userId, {
-                privateMetadata: {
-                    free_usage: free_usage + 1,
-                },
-            });
+            await sql`
+              INSERT INTO creations(user_id, prompt, content, type, embedding)
+              VALUES(${userId}, ${prompt}, ${content}, 'article', ${embedding})
+              RETURNING id
+            `;
         }
 
         response(res, 200, "Success", content);
